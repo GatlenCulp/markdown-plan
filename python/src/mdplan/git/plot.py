@@ -1,15 +1,15 @@
 import json
-import subprocess
 import os
 import platform
+import subprocess
 import tempfile
-from importlib_resources import files
 
+from importlib_resources import files
 
 from .history import GitHistory
 
 
-def native_open(file):
+def native_open(file) -> None:
     if platform.system() == "Darwin":
         subprocess.call(("open", file))
     elif platform.system() == "Windows":
@@ -22,7 +22,7 @@ class GitPlot:
     history: GitHistory
     template_path = files("mdplan").joinpath("data").joinpath("plot_template.html")
 
-    def __init__(self, history: GitHistory):
+    def __init__(self, history: GitHistory) -> None:
         self.history = history
 
     def to_html(self) -> str:
@@ -39,9 +39,12 @@ class GitPlot:
                 "tasks": v["tasks"]["completed"],
             }
 
-        totals, completions = zip(
-            *[(to_total(v), to_completed(v)) for v in data["versions"]]
-        )
+        if not data["versions"]:
+            totals, completions = [], []
+        else:
+            totals, completions = zip(
+                *[(to_total(v), to_completed(v)) for v in data["versions"]], strict=False
+            )
         stacked = list(totals + completions)
         values = json.dumps(stacked)
 
@@ -49,7 +52,7 @@ class GitPlot:
         html = template.replace("{{values}}", values)
         return html
 
-    def open(self):
+    def open(self) -> None:
         with tempfile.NamedTemporaryFile(delete=False) as temp:
             path = temp.name + ".html"
             with open(path, "w") as f:
